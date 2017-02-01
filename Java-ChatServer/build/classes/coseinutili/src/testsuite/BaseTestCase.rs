@@ -1,0 +1,3 @@
+testsuite.BaseTestCase$1
+testsuite.BaseTestCase
+testsuite.BaseTestCase$MockConnectionConfiguration

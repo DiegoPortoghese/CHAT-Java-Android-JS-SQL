@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <script>
+    
+    // Initialize everything when the window finishes loading
+    window.addEventListener("load", function(event) {
+      var status = document.getElementById("status");
+      var nick = document.getElementById("nick");
+	  var password = document.getElementById("password");
+	  var open = document.getElementById("open");
+      var regg = document.getElementById("register");
+	  var divdialog = document.getElementById("dialog");
+	  
+      var close = document.getElementById("close");
+      var send = document.getElementById("send");
+      var text = document.getElementById("text");
+      var message = document.getElementById("message");
+      var socket;
+	  
+	  
+	  
+	  //								TEST ZONE
+//--------------------------------------------------------------------------------------------------	  
+
+
+		
+//--------------------------------------------------------------------------------------------------	  
+
+
+
+
+
+	  //document.getElementById("text").style.visibility = "hidden";
+	  
+      status.textContent = "Not Connected";
+      nick.value = "NickName";
+	  password.value = "Password";
+      close.disabled = true;
+      send.disabled = true;
+
+
+
+//-------------------------REGISTRATION-----------------------------------------------
+
+	  regg.addEventListener("click", function(event) {
+      socket = new WebSocket("ws://ipwnd.ddns.net:5552");
+	  
+	  socket.addEventListener("open", function(event) {
+          close.disabled = false;
+          send.disabled = false;
+		  var JsonString = "{\"type\":\"regg-s\",\"nick\":\""+nick.value+"\",\"password\":\""+password.value+"\"}";
+		  socket.send(JsonString);
+		  //richiesta al server di eventuali nuovi messaggi
+        });
+		
+		// Display messages received from the server
+        socket.addEventListener("message", function(event) {
+		  var jsonObject = JSON.parse(event.data);
+		  if(jsonObject.r !==0){
+		    response.textContent = "Now you can login";
+		  }else{
+		  response.textContent = " ERROR LOGIN";
+		  }
+		  
+		  socket.close();
+        });
+		
+	  });
+	  
+	  
+///--------------------------------LOGIN--------------------------------------------------
+
+      // Create a new connection when the Connect button is clicked
+      open.addEventListener("click", function(event) {
+	  
+		socket = new WebSocket("ws://ipwnd.ddns.net:5552");
+        open.disabled = true;
+		
+		//richiesta messaggio
+		function msg_request(){
+		socket.send("<mrq_>");
+		}
+		
+        socket.addEventListener("open", function(event) {
+          close.disabled = false;
+          send.disabled = false;
+		  
+		  //JSON QUERY LOGIN
+		  var JsonString = "{\"type\":\"login-s\",\"nick\":\""+nick.value+"\",\"password\":\""+password.value+"\"}";
+		  socket.send(JsonString);
+		  
+		  //richiesta al server di eventuali nuovi messaggi
+		  //var intervalID = window.setInterval(msg_request, 5000);
+          
+        });
+
+        //---------------------------------------------------JSON FROM SERVER READ-------------------------------------------
+        socket.addEventListener("message", function(event) {
+		
+		var jsonObject = JSON.parse(event.data);
+		
+							//CHECK LOGIN
+			if(jsonObject.type=="login-r"){
+			if(jsonObject.r==1){
+				
+				response.textContent="Login successfull";
+				
+				nick.style.visibility = "hidden";
+				password.style.visibility = "hidden";
+				open.style.visibility = "hidden";
+				register.style.visibility = "hidden";
+				var JsonString = "{\"type\":\"usersonline\"}";
+				socket.send(JsonString);
+				status.textContent = "Connected";
+				}else{
+					response.textContent= "t: "+jsonObject.type+" r: " +jsonObject.r+ " ";
+					//response.textContent="ERRORE, Check Username or Password ";
+					socket.close();
+				}
+				
+			}
+			
+			//status.textContent=jsonObject.type;
+			//--------------------------------Request users online list-------------------------
+			if(jsonObject.type=="users-l"){
+			status.textContent="OK";
+				
+				for(var i=0;i<jsonObject.users.length;i++){
+				
+					$('#users').append('<a name=\"user\" >'+jsonObject.users[i]+'<br /></a>');
+					
+				}
+				
+				/**
+				var myForm = document.p.user;
+				var myControls = myForm.elements['p_id[]'];
+				for (var i = 0; i < myControls.length; i++) {
+					var aControl = myControls[i];
+				}
+				**/
+				
+				
+				//status.textContent=stringa;
+			}
+//---------------------------------------------------MESSAGE----------------------------------------------------
+			if(jsonObject.type=="message"){
+				$('#msg-r').append(jsonObject.from+'<div id=\"imageContainer\"><br />'+"&nbsp;&nbsp;&nbsp;&nbsp;"+jsonObject.data+'<br /></div>');
+			
+			}
+			
+			
+			
+			//_-----------------------------------OMG--------------------
+		if(jsonObject.type=="adduser"){
+			status.textContent = "User added";
+			var js=jsonObject.user;
+			$('#users').append('<a name=\"user\" >'+js +'<br /></a>');
+		}
+		
+		if(jsonObject.type=="rmuser"){
+			status.textContent =jsonObject.user+" go out";
+			var userout=jsonObject.user;
+			var users = document.getElementsByName("user");
+			
+			for (var k = 0; k < users.length; k++){
+				var bbb=users[k].textContent;
+				if(bbb===userout){users[k].remove();}
+			}
+		}
+        });//FINE
+		
+        // Display any errors that occur
+        socket.addEventListener("error", function(event) {
+          message.textContent = "Error: " + event;
+        });
+
+        socket.addEventListener("close", function(event) {
+			var JsonString = "{\"type\":\"offline\"}";
+			socket.send(JsonString);
+			open.disabled = false;
+			status.textContent = "Not Connected";
+        });
+		
+      });
+
+      // Close the connection when the Disconnect button is clicked
+      close.addEventListener("click", function(event) {
+        close.disabled = true;
+        send.disabled = true;
+		var JsonString = "{\"type\":\"offline\"}";
+			socket.send(JsonString);
+          open.disabled = false;
+          status.textContent = "Not Connected";
+		  
+        message.textContent = "";
+        socket.close();
+      }
+	  
+	  
+	  );
+
+      // Send text to the server when the Send button is clicked
+      send.addEventListener("click", function(event) {
+	  //casting input
+		var myVal = text.value;
+		myVal = myVal.replace(/\\/g, '\\\\');
+		myVal = myVal.replace(/"/g, '\\"');
+		 // escape backslashes
+		//myVal = myVal.replace(/"/g, '\\"');   // escape quotes
+		var JsonString = "{\"type\":\"message\",\"data\":\""+myVal+"\"}";
+		socket.send(JsonString);	
+        //socket.send(text.value);
+        text.value = "";
+      });
+	  
+    });
+  </script>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Client JB Chat</title>
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <link rel="stylesheet" href="/resources/demos/style.css">
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <script>
+  $( function() {
+    $( "#dialog" ).dialog();
+  } );
+  </script>
+</head>
+
+   <style type="text/css">
+  #container {
+    width:100%;
+    
+}
+
+#left {
+    float:left;
+    width:150px;
+	
+}
+
+#center {
+
+    display: inline-block;
+    margin:0 auto;
+	margin-left: 10px;
+	width:500px;
+}
+ #imageContainer {
+       width:210px; 
+       height:32px; 
+       background-image: url(imgs/bar.png);
+ }
+ 
+#right {
+    float:right;
+    width:100px;
+	
+}
+  </style>
+  <body background="imgs/bbgb.png";>
+  
+	<div id="dialog" title="Login" >
+		<input id="nick" /><br />
+		<input id="password" /><br />
+		<input id="open" type="button" value="Login" />&nbsp;
+		<input id="register" type="button" value="Register" />&nbsp;
+		<br /><span id="response"></span>
+	</div>
+	
+	<div id="container" >
+
+	<div id="left"  >
+
+		<a > Status: <span id="status" ></span><br />
+		Online Users<br />
+		</a>
+		<div id="users" style="color:rgb(255, 102, 0)"><br /></div>
+		<div id="users-n" style="color:#0000FF"></div>
+
+  </div>
+  
+	<div id="right">
+		<input id="close" type="button" value="Disconnect" /><br />
+	</div>
+  
+  
+	<div id="center" >
+
+			<div style="height:325px; solid #ccc;font:12px/10px Georgia, Garamond, Serif;overflow:auto;">
+			
+			<div id="msg-r" align="left"></div>
+		</div>
+		<input id="text" style="width: 430px;"/>&nbsp;
+		<input id="send" type="button" value="Send" />&nbsp;
+		  		<br /><br /><p style="margin:0 auto;">Welcome</p><br />
+		<p style="margin:0 auto;">tinyChat+ Created by Diego Portoghese</p><br />
+	</div>
+
+  </div>
+
+</body>
+</html>

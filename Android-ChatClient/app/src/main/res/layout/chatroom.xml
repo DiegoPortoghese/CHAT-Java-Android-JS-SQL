@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:weightSum="1">
+
+    <Button
+        android:text="back"
+        android:layout_width="wrap_content"
+        android:layout_height="29dp"
+        android:id="@+id/button4"
+        android:layout_weight="0.03"
+        android:onClick="back_fromchat"/>
+
+    <ListView
+        android:layout_width="match_parent"
+        android:layout_height="102dp"
+        android:layout_weight="1.05"
+        android:id="@+id/listMsg"/>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="78dp">
+
+        <Button
+            android:text=">"
+            android:layout_width="66dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/button3"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"
+            android:onClick="SendMsgF"/>
+
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="textPersonName"
+            android:ems="10"
+            android:layout_alignBottom="@+id/button3"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:id="@+id/editText"
+            android:layout_toLeftOf="@+id/button3"
+            android:layout_toStartOf="@+id/button3" />
+
+    </RelativeLayout>
+
+</LinearLayout>
